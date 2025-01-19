@@ -1,0 +1,165 @@
+name:                vllm-proxy
+version:             0.0.1
+github:              RobertFischer/vllm-proxy
+license:             Apache-2
+author:              Robert Fischer
+maintainer:          rcfischer@duck.com
+copyright:           2025 Robert Fischer
+
+extra-source-files:
+- README.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on Github at <https://github.com/RobertFischer/vllm-proxy#readme>
+
+dependencies:
+  - base >= 4.11 && < 5
+  - rio >= 0.1.12.0 && < 0.2
+
+  - aeson
+  - bytestring
+  - conduit
+  - extra
+  - filepath
+  - http-client
+  - http-client-tls
+  - include-file
+  - modern-uri
+  - prefix-units
+  - random
+  - typed-process
+  - unliftio
+  - wreq
+  - yaml
+
+default-extensions:
+  - ApplicativeDo
+  - DeriveGeneric
+  - DeriveDataTypeable
+  - DerivingStrategies
+  - DerivingVia
+  - FlexibleInstances
+  - ImportQualifiedPost
+  - LambdaCase
+  - MultiWayIf
+  - NoImplicitPrelude
+  - OverloadedLists
+  - OverloadedStrings
+  - QuasiQuotes
+  - RecordWildCards
+  - ScopedTypeVariables
+  - TemplateHaskell
+  - TypeApplications
+  - UndecidableInstances
+
+ghc-options:
+
+  - -fdicts-strict
+  - -fexcess-precision
+  - -flate-dmd-anal
+  - -flate-specialise
+  - -fspec-constr-keen
+  - -fspec-constr
+  - -fspecialise-aggressively
+  - -fstatic-argument-transformation
+
+  - -Wall
+  - -Wcompat
+  - -Wunused-binds
+  - -dcore-lint
+
+  - -Werror=deferred-out-of-scope-variables
+  - -Werror=deferred-type-errors
+  - -Werror=forall-identifier
+  - -Werror=implicit-prelude
+  - -Werror=incomplete-patterns
+  - -Werror=incomplete-record-updates
+  - -Werror=incomplete-uni-patterns
+  - -Werror=misplaced-pragmas
+  - -Werror=missing-export-lists
+  - -Werror=missing-exported-signatures
+  - -Werror=missing-fields
+  - -Werror=missing-methods
+  - -Werror=noncanonical-monad-instances
+  - -Werror=noncanonical-monoid-instances
+  - -Werror=orphans
+  - -Werror=overflowed-literals
+  - -Werror=overlapping-patterns
+  - -Werror=partial-fields
+  - -Werror=semigroup
+  - -Werror=unused-do-bind
+  - -Werror=wrong-do-bind
+
+  - -Wwarn=ambiguous-fields
+  - -Wwarn=dodgy-exports
+  - -Wwarn=dodgy-foreign-imports
+  - -Wwarn=dodgy-imports
+  - -Wwarn=duplicate-exports
+  - -Wwarn=empty-enumerations
+  - -Wwarn=inaccessible-code
+  - -Wwarn=invalid-haddock
+  - -Wwarn=loopy-superclass-solve
+  - -Wwarn=missed-specialisations
+  - -Wwarn=missing-home-modules
+  - -Wwarn=missing-pattern-synonym-signatures
+  - -Wwarn=name-shadowing
+  - -Wwarn=operator-whitespace
+  - -Wwarn=prepositive-qualified-module
+  - -Wwarn=redundant-bang-patterns
+  - -Wwarn=redundant-constraints
+  - -Wwarn=redundant-record-wildcards
+  - -Wwarn=redundant-strictness-flags
+  - -Wwarn=simplifiable-class-constraints
+  - -Wwarn=type-equality-out-of-scope
+  - -Wwarn=type-equality-requires-operators
+  - -Wwarn=unicode-bidirectional-format-characters
+  - -Wwarn=unticked-promoted-constructors
+  - -Wwarn=unused-foralls
+  - -Wwarn=unused-imports
+  - -Wwarn=unused-matches
+  - -Wwarn=unused-packages
+  - -Wwarn=unused-record-wildcards
+  - -Wwarn=unused-type-patterns
+
+  - -Wno-deriving-defaults
+  - -Wno-inline-rule-shadowing
+  - -Wno-missing-deriving-strategies
+  - -Wno-missing-import-lists
+  - -Wno-missing-local-signatures
+  - -Wno-tabs
+  - -Wno-type-defaults
+
+library:
+  source-dirs: src
+
+executables:
+  vllm-proxy-exe:
+    main:                Main.hs
+    source-dirs:         app
+    dependencies:
+    - vllm-proxy
+    - optparse-simple
+
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+
+tests:
+  vllm-proxy-test:
+    main:                Spec.hs
+    source-dirs:         test
+    dependencies:
+    - vllm-proxy
+    - hspec
+
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
