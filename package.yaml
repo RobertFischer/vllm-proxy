@@ -8,6 +8,7 @@ copyright:           2025 Robert Fischer
 
 extra-source-files:
 - README.md
+- LICENSE
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -30,6 +31,7 @@ dependencies:
   - http-client
   - http-client-tls
   - include-file
+  - katip
   - modern-uri
   - prefix-units
   - random
