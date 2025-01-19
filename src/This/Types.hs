@@ -10,6 +10,7 @@ module This.Types
   )
 where
 
+import Katip qualified as K
 import Network.Wreq qualified as Wreq
 import RIO
 import RIO.Process
@@ -26,8 +27,21 @@ data App = App
   { appLogFunc :: LogFunc,
     appProcessContext :: ProcessContext,
     appWreqOpts :: Wreq.Options,
-    appGenM :: AtomicGenM StdGen
+    appGenM :: AtomicGenM StdGen,
+    appLogEnv :: K.LogEnv,
+    appLogCtx :: K.LogContexts,
+    appLogNs :: K.Namespace
   }
+
+instance K.Katip RApp where
+  getLogEnv = appLogEnv <$> ask
+  localLogEnv f = local (\env -> env {appLogEnv = f (appLogEnv env)})
+
+instance K.KatipContext RApp where
+  getKatipContext = appLogCtx <$> ask
+  localKatipContext f = local (\env -> env {appLogCtx = f (appLogCtx env)})
+  getKatipNamespace = appLogNs <$> ask
+  localKatipNamespace f = local (\env -> env {appLogNs = f (appLogNs env)})
 
 instance HasLogFunc App where
   logFuncL = lens appLogFunc (\x y -> x {appLogFunc = y})

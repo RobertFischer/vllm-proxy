@@ -141,7 +141,7 @@ library:
   source-dirs: src
 
 executables:
-  vllm-proxy-exe:
+  vllm-proxy:
     main:                Main.hs
     source-dirs:         app
     dependencies:
