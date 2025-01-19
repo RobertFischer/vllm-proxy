@@ -8,12 +8,7 @@ module This.Wreq
     getJSON,
     postJSON,
     postJSON_,
-    vllmPath,
-    countTokens,
-    getCompletion,
-    getCompletion',
-    mkPiensoOpts,
-    CompletionPrompt (..),
+    mkAppOpts,
   )
 where
 
@@ -24,14 +19,12 @@ import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.Wreq qualified as Wreq
 import RIO.ByteString qualified as SBS
 import RIO.ByteString.Lazy qualified as LBS
-import RIO.Map qualified as M
 import Text.URI qualified as URI
-import Text.URI.QQ (uri)
 import This
 import This.Orphans ()
 
-mkPiensoOpts :: (MonadIO m) => Natural -> m Wreq.Options
-mkPiensoOpts timeoutMins = do
+mkAppOpts :: (MonadIO m) => Natural -> m Wreq.Options
+mkAppOpts timeoutMins = do
   httpMgr <-
     liftIO
       $ HTTP.newManager
@@ -95,125 +88,3 @@ postJSON_ uri req = do
     $ Wreq.postWith pOpts uriStr (JSON.toJSON req)
   where
     uriStr = URI.renderStr uri
-
--- | Constructs a URI that is the base URI appended with the given path.
-vllmPath :: Text -> RApp URI
-vllmPath path = URI.mkURI path >>= vllmPath'
-
-vllmPath' :: URI -> RApp URI
-vllmPath' pathAsUri = do
-  vllmUri <- appBaseUri <$> ask
-  case pathAsUri `URI.relativeTo` vllmUri of
-    Nothing -> fail $ "Failed to resolve " <> URI.renderStr pathAsUri <> " relative to " <> URI.renderStr vllmUri
-    Just v -> return v
-
-countTokens :: Text -> RApp Natural
-countTokens prompt = do
-  modelName <- appModel <$> ask
-  endpointUri <- vllmPath' [uri|/tokenize|]
-  TokenCountResp result <- postJSON endpointUri $ TokenCountReq modelName prompt
-  return result
-
-newtype TokenCountResp = TokenCountResp Natural deriving (Eq, Ord, Show)
-
-instance FromJSON TokenCountResp where
-  parseJSON = withObject "TokenCountResp" $ \v ->
-    TokenCountResp <$> v .: "count"
-
-data TokenCountReq = TokenCountReq
-  { tcreqModel :: Text,
-    tcreqPrompt :: Text
-  }
-  deriving (Eq, Show)
-
-instance ToJSON TokenCountReq where
-  toJSON TokenCountReq {..} =
-    toJSON
-      $ M.singleton ("model" :: Text) tcreqModel
-      <> M.singleton "prompt" tcreqPrompt
-
-getCompletion :: Text -> Maybe Natural -> RApp Text
-getCompletion prompt maxTokens =
-  getCompletion'
-    $ CompletionPrompt
-      { promptMaxTokens = maxTokens,
-        promptPrompt = prompt,
-        promptTemperature = Just pct0,
-        promptTopP = Just pct100,
-        promptMinP = Just pct0,
-        promptTopK = Nothing
-      }
-
-data CompletionPrompt = CompletionPrompt
-  { promptMaxTokens :: Maybe Natural,
-    promptPrompt :: Text,
-    promptTemperature :: Maybe Percent,
-    promptTopP :: Maybe Percent,
-    promptMinP :: Maybe Percent,
-    promptTopK :: Maybe Natural
-  }
-  deriving (Generic)
-
-instance ToJSON CompletionPrompt
-
-getCompletion' :: CompletionPrompt -> RApp Text
-getCompletion' CompletionPrompt {..} = do
-  modelName <- appModel <$> ask
-  endpointUri <- vllmPath' [uri|/v1/completions|]
-  let completionReq =
-        CompletionReq
-          { creqModel = modelName,
-            creqPrompt = promptPrompt,
-            creqMaxTokens = promptMaxTokens,
-            creqTemperature = promptTemperature,
-            creqMinP = promptMinP,
-            creqTopP = promptTopP,
-            creqTopK = promptTopK
-          }
-  logDebug . display $ completionReq
-  CompletionResp result <- postJSON endpointUri completionReq
-  logDebug $ display result
-  return result
-
-data CompletionReq = CompletionReq
-  { creqModel :: Text,
-    creqPrompt :: Text,
-    creqMaxTokens :: Maybe Natural,
-    creqTemperature :: Maybe Percent,
-    creqTopP :: Maybe Percent,
-    creqTopK :: Maybe Natural,
-    creqMinP :: Maybe Percent
-  }
-  deriving (Show)
-
-instance ToJSON CompletionReq where
-  toJSON CompletionReq {..} =
-    toJSON
-      $ M.fromList @Text @JSON.Value
-        [ ("model", toJSON creqModel),
-          ("prompt", toJSON creqPrompt)
-        ]
-      <> maxTokens
-      <> topK
-      <> minP
-      <> topP
-      <> temperature
-    where
-      mayMap :: (ToJSON a) => Text -> Maybe a -> M.Map Text JSON.Value
-      mayMap key = maybe M.empty (M.singleton key . toJSON)
-      maxTokens = mayMap "max_tokens" creqMaxTokens
-      topK = mayMap "top_k" creqTopK
-      minP = mayMap "min_p" (realToFrac @_ @Float <$> creqMinP)
-      topP = mayMap "top_p" (realToFrac @_ @Float <$> creqTopP)
-      temperature = mayMap "temperature" (realToFrac @_ @Float <$> creqTemperature)
-
-newtype CompletionResp = CompletionResp Text
-  deriving (Show)
-
-instance FromJSON CompletionResp where
-  parseJSON = withObject "CompletionResp" $ \v -> do
-    choices <- v .: "choices"
-    items <- parseJSONList choices
-    case items of
-      [] -> fail $ "Empty 'choices' found: " <> show v
-      item : _ -> CompletionResp <$> (item .: "text")
