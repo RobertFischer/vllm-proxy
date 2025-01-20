@@ -24,8 +24,7 @@ type RApp = RIO App
 
 -- | Common data throughout the app
 data App = App
-  { appLogFunc :: LogFunc,
-    appProcessContext :: ProcessContext,
+  { appProcessContext :: ProcessContext,
     appWreqOpts :: Wreq.Options,
     appGenM :: AtomicGenM StdGen,
     appLogEnv :: K.LogEnv,
@@ -42,9 +41,6 @@ instance K.KatipContext RApp where
   localKatipContext f = local (\env -> env {appLogCtx = f (appLogCtx env)})
   getKatipNamespace = appLogNs <$> ask
   localKatipNamespace f = local (\env -> env {appLogNs = f (appLogNs env)})
-
-instance HasLogFunc App where
-  logFuncL = lens appLogFunc (\x y -> x {appLogFunc = y})
 
 instance HasProcessContext App where
   processContextL = lens appProcessContext (\x y -> x {appProcessContext = y})

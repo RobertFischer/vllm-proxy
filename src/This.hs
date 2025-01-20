@@ -11,7 +11,7 @@ module This
 where
 
 import Control.Monad (replicateM)
-import Control.Monad.Extra (whenJust)
+import Control.Monad.Extra (ifM, whenJust)
 import Data.ByteString.Char8 qualified as C8
 import RIO
 import RIO.ByteString qualified as SBS

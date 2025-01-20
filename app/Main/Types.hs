@@ -8,24 +8,34 @@ where
 import This
 import This.Types
 
+-- | How to structure the output
+data LogFormat = YAMLLogFormat | JSONLogFormat | BracketLogFormat
+
 -- | Convenience alias.
 type InitM = RIO SimpleApp
 
 -- | Verbosity for logging
 data Verbosity
-  = -- | 'LevelDebug' + 'setLogVerboseFormat'
+  = -- | 'DebugS' + 'V3'
+    VerbosityLoudest
+  | -- | 'DebugS' + 'V2'
+    VerbosityLouder
+  | -- | 'DebugS' + 'V1'
     VerbosityLoud
-  | -- | 'LevelDebug'
+  | -- | 'DebugS' + 'V0'
     VerbosityDebug
-  | -- | 'LevelInfo'
+  | -- | 'InfoS'
     VerbosityInfo
-  | -- | 'LevelWarn'
+  | -- | 'NoticeS'
+    VerbosityNotice
+  | -- | 'WarningS'
     VerbosityWarn
-  | -- | 'LevelError'
+  | -- | 'ErrorS'
     VerbosityError
   deriving (Eq, Ord, Enum, Bounded)
 
 data GlobalOpts = GlobalOpts
   { optVerbosity :: Verbosity,
-    optTimeoutMins :: Natural
+    optTimeoutMins :: Natural,
+    optLogFormat :: LogFormat
   }

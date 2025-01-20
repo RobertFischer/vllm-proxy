@@ -24,6 +24,7 @@ dependencies:
   - rio >= 0.1.12.0 && < 0.2
 
   - aeson
+  - ansi-terminal
   - bytestring
   - conduit
   - extra
@@ -35,6 +36,7 @@ dependencies:
   - modern-uri
   - prefix-units
   - random
+  - text
   - typed-process
   - unliftio
   - wreq

@@ -13,6 +13,7 @@ import Options.Applicative
 import Options.Applicative.Simple
 import RIO.Process
 import RIO.Text qualified as T
+import System.IO qualified as IO
 import Text.URI qualified as URI
 import This
 
@@ -30,7 +31,7 @@ flagCnt mods = length <$> many (flag' () mods)
 -- "info", "warn", or "error".  The "-v" and "-q" flags will calculate from there.
 mkVerbosityOpt :: InitM (Parser Verbosity)
 mkVerbosityOpt = do
-  defVal <- (calculateDefault . T.uncons) <$> envOrDefault "VLLM_PXY_VERBOSITY" "Info"
+  defVal <- calculateDefault . T.uncons <$> envOrDefault "VLLM_PXY_VERBOSITY" "Info"
   return $ vqParser defVal
   where
     defDefVal = VerbosityInfo -- Default default value
@@ -57,13 +58,13 @@ mkVerbosityOpt = do
       Nothing -> defDefVal
       Just (c, _) -> case c of
         -- "1"
-        '1' -> VerbosityLoud
+        '1' -> VerbosityLoudest
+        -- "Loud"
+        'L' -> VerbosityLoudest
+        'l' -> VerbosityLoudest
         -- "Verbose"
         'V' -> VerbosityLoud
         'v' -> VerbosityLoud
-        -- "Loud"
-        'L' -> VerbosityLoud
-        'l' -> VerbosityLoud
         -- "Debug"
         'D' -> VerbosityDebug
         'd' -> VerbosityDebug
@@ -94,10 +95,48 @@ uriReadM = eitherReaderT URI.mkURI
 mkGlobalOptsParser :: InitM (Parser GlobalOpts)
 mkGlobalOptsParser = do
   verbosityParser <- mkVerbosityOpt
+  logFormatParser <- mkLogFormatParser
   return
     $ GlobalOpts
     <$> verbosityParser
     <*> timeoutMinsParser
+    <*> logFormatParser
+
+mkLogFormatParser :: InitM (Parser LogFormat)
+mkLogFormatParser = do
+  defaultDefaultFormat <-
+    liftIO (IO.hIsTerminalDevice stdout) <&> \case
+      True -> BracketLogFormat
+      False -> JSONLogFormat
+  defaultFormat <- calculateDefault defaultDefaultFormat . T.uncons <$> envOrDefault "VLLM_PXY_LOGFORMAT" ""
+  return
+    $ option
+      logFormatReadM
+      ( short 'L'
+          <> long "log-format"
+          <> metavar "SUFFIX"
+          <> help "The file suffix for the logging format to use: 'json', 'yaml', or 'txt'"
+          <> value defaultFormat
+          <> showDefaultWith
+            ( \case
+                YAMLLogFormat -> "yaml"
+                JSONLogFormat -> "json"
+                BracketLogFormat -> "txt"
+            )
+      )
+  where
+    charToMaybeFmt = \case
+      'y' -> Just YAMLLogFormat
+      'Y' -> Just YAMLLogFormat
+      'j' -> Just JSONLogFormat
+      'J' -> Just JSONLogFormat
+      't' -> Just BracketLogFormat
+      'T' -> Just BracketLogFormat
+      _ -> Nothing
+    calculateDefault defFmt = fromMaybe defFmt . (>>= \(c, _) -> charToMaybeFmt c)
+    logFormatReadM = maybeReader $ \case
+      [] -> Nothing
+      c : _ -> charToMaybeFmt c
 
 timeoutMinsParser :: Parser Natural
 timeoutMinsParser =

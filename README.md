@@ -55,6 +55,54 @@ service just like a vLLM which serves multiple models.
 Weight routing to prefer routes based on previous cache hits in order to better
 leverage vLLM's prefix caching.
 
+# Usage
+
+## Logging
+
+### Logging Level
+
+Logging goes to standard out. If you want it to go to a file, redirect it.
+
+The default verbosity is parsed from the `VLLM_PXY_VERBOSITY` environment
+variable. Options are:
+
+- `1` or `Loud`: Every message with all the available details.
+- `Verbose`: Every message with some extra details.
+- `Debug`: Every message with no extra details.
+- `Info`: Informational messages (and more severe). This is the default level.
+- `Warning`: Warning messages (and more severe).
+- `0`, `Quiet`, or `Error`: Error messages (and more severe).
+
+You can specify multiple `-v` and `-q` on the command line to move more verbose
+or more quiet. There is no way to entirely disable logging by design.
+
+Any message at or above the Error level will always include all available
+details. All the available details will also be included if the logging is not
+to the terminal.
+
+### Logging Format
+
+We use a structured logger for ease of parsing in operational environments. In
+other words, instead of seeing messages like
+`Failed to parse value: [input="foo"]`, you will get a message
+`Failed to parse value` and the log entry will have an associated value named
+`input` with the value `"foo"`.
+
+There are three formats: a single-line bracketted format (which developers are
+used to), a YAML-based format, and a single-line JSON-based format.
+
+The default format is parsed from the `VLLM_PXY_LOGFORMAT` environment variable.
+If it isn't set, then the default for a terminal is to use the bracket format
+and the default otherwise is to use a JSON format. The format can also be set
+using the `-L` command line flag.
+
+The values for the environment variable and the command line flag are based on
+the file suffix for the appropriate format:
+
+- `yml` or `yaml`
+- `json`
+- `txt` (bracket)
+
 # License
 
 Copyright 2025 Robert Fischer
