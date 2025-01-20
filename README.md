@@ -31,7 +31,8 @@ features which are all already implemented very well by Nginx:
 - Connection limiting
 - Rate limiting
 - Caching
-- Obscuring Error Pages (ie: removing useful feedback on errors to thwart l33t h4x0rZ)
+- Obscuring Error Pages (ie: removing useful feedback on errors to thwart l33t
+  h4x0rZ)
 
 # Features
 
@@ -61,9 +62,9 @@ leverage vLLM's prefix caching.
 ## Redis and State
 
 The server is effectively stateless: state is stored in Redis. This means that
-you can run multiple instances of this proxy and they will all share the same
-back-end state. (We wouldn't want the proxy becoming a single point of failure,
-right?)
+you can run multiple instances of this proxy pointing to the same Redis database
+and they will all share the same back-end state. (We wouldn't want the proxy
+becoming a single point of failure, right?)
 
 The default connection string is parsed from the `VLLM_PXY_REDIS` environment
 variable. That can be overridden by the `-R` command line flag. The value is a
@@ -77,7 +78,8 @@ That would connect to the host `host` on port `42` using username `username` and
 password `password` and use database `2`. (You do know that a single Redis
 server has multiple databases, right?)
 
-You can also use the string `local` to connect to `localhost:6379`.
+You can also use the string `local` to connect to `localhost:6379`. This is the
+default.
 
 Note that if the environment variable is configured to an invalid value, the CLI
 will fail to start with a useful error message.
