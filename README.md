@@ -31,6 +31,7 @@ features which are all already implemented very well by Nginx:
 - Connection limiting
 - Rate limiting
 - Caching
+- Obscuring Error Pages (ie: removing useful feedback on errors to thwart l33t h4x0rZ)
 
 # Features
 
