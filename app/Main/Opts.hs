@@ -3,6 +3,7 @@ module Main.Opts
     InitM,
     mkGlobalOptsParser,
     readmeCmdOpts,
+    serverCmdOpts,
     eitherReaderT,
     uriReadM,
   )
@@ -107,21 +108,29 @@ mkGlobalOptsParser = do
 
 mkRedisUriParser :: InitM (Parser Redis.ConnectInfo)
 mkRedisUriParser = do
-  envConnStrMaybe <- lookupEnvFromContext "VLLM_PXY_REDIS"
-  let defValMaybe =
-        envConnStrMaybe >>= \case
-          "local" -> Just Redis.defaultConnectInfo
-          c ->
-            case Redis.parseConnectInfo (T.unpack c) of
-              Left _ -> Nothing
-              Right connInfo -> Just connInfo
-  let mods =
-        baseMods <> case liftA2 (,) envConnStrMaybe defValMaybe of
-          Nothing -> idm
-          Just (c, defVal) -> value defVal <> showDefaultWith (const $ T.unpack c)
-  return $ option redisConnInfoM mods
+  envConnStr <- T.unpack <$> envOrDefault "VLLM_PXY_REDIS" "local"
+  defVal <- case envConnStr of
+    "local" -> return Redis.defaultConnectInfo
+    c ->
+      case Redis.parseConnectInfo c of
+        Left err ->
+          fail
+            $ "Could not parse Redis connection string from env ["
+            <> envConnStr
+            <> "]: "
+            <> err
+        Right connInfo -> return connInfo
+  return
+    $ option
+      redisConnInfoM
+      ( short 'R'
+          <> long "redis"
+          <> metavar "CONN_URI"
+          <> help "The connection string for Redis"
+          <> value defVal
+          <> showDefaultWith (const envConnStr)
+      )
   where
-    baseMods = short 'R' <> long "redis" <> metavar "CONN_URI" <> help "The connection string for Redis"
     redisConnInfoM = eitherReader $ \case
       "local" -> Right Redis.defaultConnectInfo
       connStr -> Redis.parseConnectInfo connStr
@@ -173,6 +182,9 @@ timeoutMinsParser =
         <> value 5
         <> showDefault
     )
+
+serverCmdOpts :: Parser ServerCmd
+serverCmdOpts = pure ServerCmd'
 
 readmeCmdOpts :: Parser ReadmeCmd
 readmeCmdOpts = ReadmeCmd' <$> readmeDisplayOpt

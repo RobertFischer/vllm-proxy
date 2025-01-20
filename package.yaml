@@ -37,6 +37,8 @@ dependencies:
   - modern-uri
   - prefix-units
   - random
+  - servant
+  - servant-server
   - text
   - typed-process
   - unliftio

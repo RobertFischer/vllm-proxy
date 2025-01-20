@@ -79,15 +79,17 @@ server has multiple databases, right?)
 You can also use the string `local` to connect to `localhost:6379`.
 
 Note that if the environment variable is configured to an invalid value, the CLI
-will quietly ignore it: you just won't have to a default value for `-R`. If you
-have any doubts about the syntax of your connection string, pass it in as `-R`
-(eg: `-R "$VLLM_PXY_REDIS"`) and you will get a useful error message back if it
-does not work.
+will fail to start with a useful error message.
 
 vLLM Proxy expects to be the only user of the Redis database. We won't be adding
 support for sharing a database (eg: key prefixing) because Redis databases are
 cheap and plentiful (and most people just use one database on their server
 anyway, so there's 15 empty databases just sitting there).
+
+The way data is stored in Redis is subject to change and should not be relied
+upon. The data itself is assumed to be transient: at any point in time, one or
+more (or all!) the data might disappear from the Redis database and the system
+will continue to function (although performance will degrade).
 
 ## Logging
 

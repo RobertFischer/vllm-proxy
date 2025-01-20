@@ -6,6 +6,7 @@ module This.Types
     URI,
     ReadmeCmd (..),
     ReadmeDisplayFormat (..),
+    ServerCmd (..),
     module RIO.Time,
   )
 where
@@ -31,13 +32,15 @@ data App = App
     appLogEnv :: K.LogEnv,
     appLogCtx :: K.LogContexts,
     appLogNs :: K.Namespace,
-    appRedis :: Redis.Connection
+    appRedisConnInfo :: Redis.ConnectInfo
   }
 
+-- Note that this is ineffecient because there is no connection pooling.
+-- It is best to get a connection and reuse it, but not all commands need that.
 instance Redis.MonadRedis RApp where
   liftRedis r = do
-    conn <- appRedis <$> ask
-    liftIO $ Redis.runRedis conn r
+    connInfo <- appRedisConnInfo <$> ask
+    liftIO $ Redis.withCheckedConnect connInfo (`Redis.runRedis` r)
 
 instance K.Katip RApp where
   getLogEnv = appLogEnv <$> ask
@@ -52,10 +55,13 @@ instance K.KatipContext RApp where
 instance HasProcessContext App where
   processContextL = lens appProcessContext (\x y -> x {appProcessContext = y})
 
-newtype AppCmd
+data AppCmd
   = ReadmeCmd ReadmeCmd
+  | ServerCmd ServerCmd
 
 newtype ReadmeCmd = ReadmeCmd' {readmeDisplayFormat :: ReadmeDisplayFormat}
+
+data ServerCmd = ServerCmd'
 
 -- Add in "ReadmeDisplayMdv" at some point in the future.
 data ReadmeDisplayFormat = ReadmeDisplayPlain

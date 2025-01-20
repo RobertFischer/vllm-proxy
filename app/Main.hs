@@ -2,7 +2,6 @@ module Main (main, ensureAbsolute) where
 
 import Data.Text.Lazy.Builder qualified as TB
 import Data.Yaml qualified as YAML
-import Database.Redis qualified as Redis
 import Katip qualified as K
 import Katip.Scribes.Handle qualified as K
 import Main.Opts
@@ -33,6 +32,11 @@ main = do
           "Print out the README"
           ReadmeCmd
           readmeCmdOpts
+        addCommand
+          "server"
+          "Run the server"
+          ServerCmd
+          serverCmdOpts
   pc <- mkDefaultProcessContext
   wreqOpts <- Wreq.mkAppOpts optTimeoutMins
   atomicStdGen <- initStdGen >>= newAtomicGenM
@@ -49,19 +53,18 @@ main = do
       =<< K.initLogEnv
         (K.Namespace ["vLLM-Proxy"])
         (K.Environment $ T.pack version)
-  Redis.withCheckedConnect optRedis $ \conn ->
-    let app =
-          App
-            { appProcessContext = pc,
-              appWreqOpts = wreqOpts,
-              appGenM = atomicStdGen,
-              appLogCtx = mempty,
-              appLogNs = mempty,
-              appLogEnv = logEnv,
-              appRedis = conn
-            }
-     in do
-          runRIO app $ run cmd
+  let app =
+        App
+          { appProcessContext = pc,
+            appWreqOpts = wreqOpts,
+            appGenM = atomicStdGen,
+            appLogCtx = mempty,
+            appLogNs = mempty,
+            appLogEnv = logEnv,
+            appRedisConnInfo = optRedis
+          }
+   in do
+        runRIO app $ run cmd
 
 logLevel :: Verbosity -> K.Severity
 logLevel = \case
