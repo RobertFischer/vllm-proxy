@@ -10,6 +10,7 @@ module This.Types
   )
 where
 
+import Database.Redis qualified as Redis
 import Katip qualified as K
 import Network.Wreq qualified as Wreq
 import RIO
@@ -29,8 +30,14 @@ data App = App
     appGenM :: AtomicGenM StdGen,
     appLogEnv :: K.LogEnv,
     appLogCtx :: K.LogContexts,
-    appLogNs :: K.Namespace
+    appLogNs :: K.Namespace,
+    appRedis :: Redis.Connection
   }
+
+instance Redis.MonadRedis RApp where
+  liftRedis r = do
+    conn <- appRedis <$> ask
+    liftIO $ Redis.runRedis conn r
 
 instance K.Katip RApp where
   getLogEnv = appLogEnv <$> ask

@@ -57,6 +57,38 @@ leverage vLLM's prefix caching.
 
 # Usage
 
+## Redis and State
+
+The server is effectively stateless: state is stored in Redis. This means that
+you can run multiple instances of this proxy and they will all share the same
+back-end state. (We wouldn't want the proxy becoming a single point of failure,
+right?)
+
+The default connection string is parsed from the `VLLM_PXY_REDIS` environment
+variable. That can be overridden by the `-R` command line flag. The value is a
+Redis connection URL, such as:
+
+```
+redis://username:password@host:42/2
+```
+
+That would connect to the host `host` on port `42` using username `username` and
+password `password` and use database `2`. (You do know that a single Redis
+server has multiple databases, right?)
+
+You can also use the string `local` to connect to `localhost:6379`.
+
+Note that if the environment variable is configured to an invalid value, the CLI
+will quietly ignore it: you just won't have to a default value for `-R`. If you
+have any doubts about the syntax of your connection string, pass it in as `-R`
+(eg: `-R "$VLLM_PXY_REDIS"`) and you will get a useful error message back if it
+does not work.
+
+vLLM Proxy expects to be the only user of the Redis database. We won't be adding
+support for sharing a database (eg: key prefixing) because Redis databases are
+cheap and plentiful (and most people just use one database on their server
+anyway, so there's 15 empty databases just sitting there).
+
 ## Logging
 
 ### Logging Level

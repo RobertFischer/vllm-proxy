@@ -29,6 +29,7 @@ dependencies:
   - conduit
   - extra
   - filepath
+  - hedis
   - http-client
   - http-client-tls
   - include-file

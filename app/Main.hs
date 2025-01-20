@@ -2,6 +2,7 @@ module Main (main, ensureAbsolute) where
 
 import Data.Text.Lazy.Builder qualified as TB
 import Data.Yaml qualified as YAML
+import Database.Redis qualified as Redis
 import Katip qualified as K
 import Katip.Scribes.Handle qualified as K
 import Main.Opts
@@ -48,17 +49,19 @@ main = do
       =<< K.initLogEnv
         (K.Namespace ["vLLM-Proxy"])
         (K.Environment $ T.pack version)
-  let app =
-        App
-          { appProcessContext = pc,
-            appWreqOpts = wreqOpts,
-            appGenM = atomicStdGen,
-            appLogCtx = mempty,
-            appLogNs = mempty,
-            appLogEnv = logEnv
-          }
-   in do
-        runRIO app $ run cmd
+  Redis.withCheckedConnect optRedis $ \conn ->
+    let app =
+          App
+            { appProcessContext = pc,
+              appWreqOpts = wreqOpts,
+              appGenM = atomicStdGen,
+              appLogCtx = mempty,
+              appLogNs = mempty,
+              appLogEnv = logEnv,
+              appRedis = conn
+            }
+     in do
+          runRIO app $ run cmd
 
 logLevel :: Verbosity -> K.Severity
 logLevel = \case

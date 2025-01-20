@@ -5,6 +5,7 @@ module Main.Types
   )
 where
 
+import Database.Redis qualified as Redis
 import This
 import This.Types
 
@@ -37,5 +38,6 @@ data Verbosity
 data GlobalOpts = GlobalOpts
   { optVerbosity :: Verbosity,
     optTimeoutMins :: Natural,
-    optLogFormat :: LogFormat
+    optLogFormat :: LogFormat,
+    optRedis :: Redis.ConnectInfo
   }

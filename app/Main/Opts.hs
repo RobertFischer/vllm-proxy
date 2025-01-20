@@ -8,6 +8,7 @@ module Main.Opts
   )
 where
 
+import Database.Redis qualified as Redis
 import Main.Types
 import Options.Applicative
 import Options.Applicative.Simple
@@ -96,11 +97,34 @@ mkGlobalOptsParser :: InitM (Parser GlobalOpts)
 mkGlobalOptsParser = do
   verbosityParser <- mkVerbosityOpt
   logFormatParser <- mkLogFormatParser
+  redisUriParser <- mkRedisUriParser
   return
     $ GlobalOpts
     <$> verbosityParser
     <*> timeoutMinsParser
     <*> logFormatParser
+    <*> redisUriParser
+
+mkRedisUriParser :: InitM (Parser Redis.ConnectInfo)
+mkRedisUriParser = do
+  envConnStrMaybe <- lookupEnvFromContext "VLLM_PXY_REDIS"
+  let defValMaybe =
+        envConnStrMaybe >>= \case
+          "local" -> Just Redis.defaultConnectInfo
+          c ->
+            case Redis.parseConnectInfo (T.unpack c) of
+              Left _ -> Nothing
+              Right connInfo -> Just connInfo
+  let mods =
+        baseMods <> case liftA2 (,) envConnStrMaybe defValMaybe of
+          Nothing -> idm
+          Just (c, defVal) -> value defVal <> showDefaultWith (const $ T.unpack c)
+  return $ option redisConnInfoM mods
+  where
+    baseMods = short 'R' <> long "redis" <> metavar "CONN_URI" <> help "The connection string for Redis"
+    redisConnInfoM = eitherReader $ \case
+      "local" -> Right Redis.defaultConnectInfo
+      connStr -> Redis.parseConnectInfo connStr
 
 mkLogFormatParser :: InitM (Parser LogFormat)
 mkLogFormatParser = do
