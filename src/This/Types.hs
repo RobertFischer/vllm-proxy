@@ -14,6 +14,7 @@ where
 import Control.Monad.Extra (fromMaybeM)
 import Database.Redis qualified as Redis
 import Katip qualified as K
+import Network.Wai.Handler.Warp qualified as Warp
 import Network.Wreq qualified as Wreq
 import RIO
 import RIO.Process
@@ -69,6 +70,10 @@ data AppCmd
 newtype ReadmeCmd = ReadmeCmd' {readmeDisplayFormat :: ReadmeDisplayFormat}
 
 data ServerCmd = ServerCmd'
+  { serverPort :: Warp.Port,
+    serverHost :: Warp.HostPreference,
+    serverUpstreams :: [URI]
+  }
 
 -- Add in "ReadmeDisplayMdv" at some point in the future.
 data ReadmeDisplayFormat = ReadmeDisplayPlain
