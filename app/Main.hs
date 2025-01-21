@@ -41,18 +41,27 @@ main = do
   wreqOpts <- Wreq.mkAppOpts optTimeoutMins
   atomicStdGen <- initStdGen >>= newAtomicGenM
   kVerbo <- logDetail optLogFormat optVerbosity
-  scribe <-
+  stdoutScribe <-
     K.mkHandleScribeWithFormatter
       (logFormat optLogFormat)
       K.ColorIfTerminal
       stdout
-      (K.permitItem $ logLevel optVerbosity)
+      (\i -> return $ K._itemSeverity i < K.ErrorS && logLevel optVerbosity <= K._itemSeverity i)
+      kVerbo
+  stderrScribe <-
+    K.mkHandleScribeWithFormatter
+      (logFormat optLogFormat)
+      K.ColorIfTerminal
+      stderr
+      (K.permitItem K.ErrorS)
       kVerbo
   logEnv <-
-    K.registerScribe "stdout" scribe K.defaultScribeSettings
+    K.registerScribe "stderr" stderrScribe K.defaultScribeSettings
+      =<< K.registerScribe "stdout" stdoutScribe K.defaultScribeSettings
       =<< K.initLogEnv
         (K.Namespace ["vLLM-Proxy"])
         (K.Environment $ T.pack version)
+  redisTuple <- (optRedis,) <$> newEmptyMVar
   let app =
         App
           { appProcessContext = pc,
@@ -61,7 +70,7 @@ main = do
             appLogCtx = mempty,
             appLogNs = mempty,
             appLogEnv = logEnv,
-            appRedisConnInfo = optRedis
+            appRedis = redisTuple
           }
    in do
         runRIO app $ run cmd

@@ -11,6 +11,7 @@ module This.Types
   )
 where
 
+import Control.Monad.Extra (fromMaybeM)
 import Database.Redis qualified as Redis
 import Katip qualified as K
 import Network.Wreq qualified as Wreq
@@ -32,15 +33,21 @@ data App = App
     appLogEnv :: K.LogEnv,
     appLogCtx :: K.LogContexts,
     appLogNs :: K.Namespace,
-    appRedisConnInfo :: Redis.ConnectInfo
+    appRedis :: (Redis.ConnectInfo, MVar Redis.Connection)
   }
 
 -- Note that this is ineffecient because there is no connection pooling.
 -- It is best to get a connection and reuse it, but not all commands need that.
 instance Redis.MonadRedis RApp where
   liftRedis r = do
-    connInfo <- appRedisConnInfo <$> ask
-    liftIO $ Redis.withCheckedConnect connInfo (`Redis.runRedis` r)
+    (connInfo, mvar) <- appRedis <$> ask
+    conn <- fromMaybeM (mkConn connInfo mvar) (tryReadMVar mvar)
+    liftIO $ Redis.runRedis conn r
+    where
+      mkConn connInfo mvar = liftIO $ do
+        conn <- Redis.checkedConnect connInfo
+        unlessM (tryPutMVar mvar conn) (Redis.disconnect conn)
+        readMVar mvar
 
 instance K.Katip RApp where
   getLogEnv = appLogEnv <$> ask
