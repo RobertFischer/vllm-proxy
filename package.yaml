@@ -19,6 +19,8 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         Please see the README on Github at <https://github.com/RobertFischer/vllm-proxy#readme>
 
+default-language: GHC2021
+
 dependencies:
   - base >= 4.11 && < 5
   - rio >= 0.1.12.0 && < 0.2
@@ -42,6 +44,7 @@ dependencies:
   - text
   - typed-process
   - unliftio
+  - warp
   - wreq
   - yaml
 
