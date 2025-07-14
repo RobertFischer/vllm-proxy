@@ -19,7 +19,7 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         Please see the README on Github at <https://github.com/RobertFischer/vllm-proxy#readme>
 
-default-language: GHC2021
+language: GHC2021
 
 dependencies:
   - base >= 4.11 && < 5
